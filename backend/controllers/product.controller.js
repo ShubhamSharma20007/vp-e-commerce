@@ -42,7 +42,7 @@ const createProduct = async (req, res) => {
 
 
 //  GET /products-list
-const ProductsList = async (req, res) => {
+const productsList = async (req, res) => {
     const { page, limit } = req.query;
     const pageNumber = +page;
     try {
@@ -280,7 +280,7 @@ export {
     // updateProductStocks,
     updateProduct,
     deleteProduct,
-    ProductsList,
+    productsList,
     allProductsGroupWise,
     getProductById,
     getProductCategoryWise,
