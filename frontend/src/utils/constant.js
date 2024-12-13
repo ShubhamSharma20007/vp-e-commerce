@@ -22,7 +22,10 @@ export const PRODUCT_GET = `${VERSION_ROUTE}/product/get-product`; // :id in par
 export const PRODUCT_UPDATE = `${VERSION_ROUTE}/product/update-product`; // :id in params
 export const PRODUCT_CATEGORY_WISE = `${VERSION_ROUTE}/product/get-category-product`; // :category in params
 export const PRODUCT_CATEGORIES = `${VERSION_ROUTE}/product/categories`;
-export const PRODUCT_QUERY_FILTER = `${VERSION_ROUTE}/product/filter-product`;
+export const PRODUCT_COUNT = `${VERSION_ROUTE}/product/total-product-count`;
+export const PRODUCT_DELETE = `${VERSION_ROUTE}/product/delete-product`; // :id in params
+
+// export const PRODUCT_QUERY_FILTER = `${VERSION_ROUTE}/product/filter-product`;
 
 
 
@@ -32,3 +35,8 @@ export const CART_GET = `${VERSION_ROUTE}/cart/get-cart-item`;
 export const CART_LENGTH = `${VERSION_ROUTE}/cart/cart-item-length`
 export const CART_UPDATE = `${VERSION_ROUTE}/cart/update-cart-item`
 export const CART_DELETE = `${VERSION_ROUTE}/cart/delete-cart-item` // :id or :qty in params
+
+
+
+// payments
+export const PAYMENT_ADD = `${VERSION_ROUTE}/payment`;

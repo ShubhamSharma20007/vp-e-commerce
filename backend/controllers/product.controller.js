@@ -1,5 +1,6 @@
 import ProductModel from "../models/product.model.js";
 import path from "path"
+import CartModel from "../models/cart.model.js";
 import { fileURLToPath } from 'url';
 import fs from "fs"
 const __dirname = fileURLToPath(
@@ -46,13 +47,25 @@ const productsList = async (req, res) => {
     const { page, limit } = req.query;
     const pageNumber = +page;
     try {
-        const productCount = await ProductModel.countDocuments();
+
         const products = await ProductModel.find().limit(limit).skip((pageNumber - 1) * limit);
-        return res.status(200).json({ products, productCount, success: true, message: 'All products fetched successfully' });
+        return res.status(200).json({ products, success: true, message: 'All products fetched successfully' });
     } catch (error) {
         return res.status(500).json({ message: error.message, success: false })
     }
 }
+
+const totalProductCount = async (req, res) => {
+    try {
+        const productCount = await ProductModel.countDocuments();
+        return res.status(200).json({ productCount, success: true, message: 'Total product count fetched successfully' });
+    } catch (err) {
+        return res.status(500).json({ message: err.message, success: false })
+    }
+}
+
+
+
 
 
 // GEt /products group wiser
@@ -206,8 +219,14 @@ const deleteProduct = async (req, res) => {
             const imagePath = path.join(__dirname, "../../public/uploads/", product.image);
             fs.unlinkSync(imagePath)
             await ProductModel.findByIdAndDelete(id);
-            return res.status(200).json({ message: 'Product deleted successfully', success: true })
         }
+        // remove the item from cart which is deleting
+        const findcart = await CartModel.findOne({ userId: req.user._id });
+        if (!findcart) {
+            return res.status(404).json({ message: 'Cart not found', success: false })
+        }
+        const removeFromcart = await CartModel.findOneAndUpdate({ userId: req.user._id }, { $pull: { products: { productId: id } } }, { new: true })
+        return res.status(200).json({ removeFromcart, message: 'Product deleted successfully', success: true })
     } catch (error) {
         return res.status(500).json({ message: error.message, success: false })
     }
@@ -243,36 +262,36 @@ const fetchCategories = async (req, res) => {
 
 //  filter product
 
-const filterProducts = async (req, res) => {
-    let { category, price, search, sort } = req.query;
+// const filterProducts = async (req, res) => {
+//     let { category, price, search, sort } = req.query;
 
-    try {
-        let query = {};
-        if (search && typeof search === 'string') {
-            query.name = { $regex: search, $options: 'i' }
-        }
+//     try {
+//         let query = {};
+//         if (search && typeof search === 'string') {
+//             query.name = { $regex: search, $options: 'i' }
+//         }
 
-        if (category) {
-            query.category = { $in: Array.isArray(category) ? category : [category] };
-        }
-        if (price) {
-            query.price = { $lte: parseInt(price) }
-        }
-        const searchProducts = await ProductModel.find(query).sort({
-            price: sort === "asc" ? 1 : -1
-        });
+//         if (category) {
+//             query.category = { $in: Array.isArray(category) ? category : [category] };
+//         }
+//         if (price) {
+//             query.price = { $lte: parseInt(price) }
+//         }
+//         const searchProducts = await ProductModel.find(query).sort({
+//             price: sort === "asc" ? 1 : -1
+//         });
 
-        if (!searchProducts || searchProducts.length === 0) {
-            return res.status(404).json({ message: 'No products found', success: false });
-        }
+//         if (!searchProducts || searchProducts.length === 0) {
+//             return res.status(404).json({ message: 'No products found', success: false });
+//         }
 
-        return res.status(200).json({ searchProducts, success: true });
+//         return res.status(200).json({ searchProducts, success: true });
 
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: err.message, success: false });
-    }
-};
+//     } catch (err) {
+//         console.error(err);
+//         return res.status(500).json({ message: err.message, success: false });
+//     }
+// };
 
 
 export {
@@ -284,6 +303,7 @@ export {
     allProductsGroupWise,
     getProductById,
     getProductCategoryWise,
+    totalProductCount,
     fetchCategories,
-    filterProducts
+    // filterProducts
 }

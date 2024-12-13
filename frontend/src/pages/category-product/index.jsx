@@ -28,12 +28,12 @@ import { Instance } from "../../lib/instance";
 import {
   PRODUCT_CATEGORIES,
   PRODUCT_CATEGORY_WISE,
-  PRODUCT_QUERY_FILTER,
+  // PRODUCT_QUERY_FILTER,
 } from "../../utils/constant";
 import ProductCard from "../../components/ProductCard";
 import CardSkeleton from "../../components/CardSkeleton";
 import { debouce } from "../../utils/debounce";
-
+import { localCurrency } from "../../utils/localCurrency";
 const sortOptions = [
   { name: "Price: Low to High", value: "asc" },
   { name: "Price: High to Low", value: "desc" },
@@ -45,6 +45,8 @@ const CategoryProduct = () => {
   const { category } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+
   const searchParamsPrice = searchParams.get("price");
   const searchCategory = searchParams.getAll("category");
   const searchProductName = searchParams.get("search");
@@ -123,13 +125,16 @@ const CategoryProduct = () => {
     }
   };
 
-  //   input range and functionlity
+  // **************************************** Price ****************************************//
+
   const [priceRange, setPriceRange] = useState(0);
   const [debouncedPriceRange, setDebouncedPriceRange] =
     useState(searchParamsPrice);
+  console.log(debouncedPriceRange);
+
   const updateDebouncedPriceRange = debouce((value) => {
     setDebouncedPriceRange(value);
-  }, 500);
+  }, 100);
 
   const handlePrice = (e) => {
     const value = e.target.value;
@@ -144,25 +149,30 @@ const CategoryProduct = () => {
         newParams.set("price", debouncedPriceRange);
         return newParams;
       });
-    } else {
-      setSearchParams((prevParams) => {
-        const newParams = new URLSearchParams(prevParams);
-        newParams.delete("price");
-        return newParams;
-      });
     }
   }, [priceRange, debouncedPriceRange]);
 
-  //    input text search and functionality
+  // **************************************** Input Text  ****************************************//
 
-  const [searchProduct, setSearchProduct] = useState(searchProductName || "");
+  const [searchProduct, setSearchProduct] = useState("");
+  const [debouncedPrductName, setDebouncedPrductName] =
+    useState(searchProductName);
 
-  const handleSearchProduct = (e) => {
+  const updateDebouncedPrductName = debouce((value) => {
+    setDebouncedPrductName(value);
+  });
+
+  const handleInputChange = (e) => {
     setSearchProduct(e.target.value);
+    updateDebouncedPrductName(e.target.value);
+    if (e.target.value.trim().length === 0) {
+      setSearchParams((prevParams) => {
+        const newParams = new URLSearchParams(prevParams);
+        newParams.delete("search");
+        return newParams;
+      });
+    }
   };
-  const debounceProductText = debouce((e) => {
-    handleSearchProduct(e);
-  }, 500);
 
   useEffect(() => {
     if (searchProduct.trim().length > 0) {
@@ -171,16 +181,18 @@ const CategoryProduct = () => {
         newParams.set("search", searchProduct.trim().toLowerCase());
         return newParams;
       });
-    } else {
-      setSearchParams((prevParams) => {
-        const newParams = new URLSearchParams(prevParams);
-        newParams.delete("search");
-        return newParams;
-      });
     }
+    // else {
+    //   setSearchParams((prevParams) => {
+    //     const newParams = new URLSearchParams(prevParams);
+    //     newParams.delete("search");
+    //     return newParams;
+    //   });
+    // }
   }, [searchProduct]);
 
-  //  sort functionality high and low
+  // **************************************** Sort ****************************************//
+
   const [sort, setSort] = useState(searchSort || "");
 
   const handleSort = (e) => {
@@ -192,27 +204,53 @@ const CategoryProduct = () => {
     });
   };
 
-  //    post the query data
-  const fetchProductsQueryWise = async () => {
-    try {
-      const request = await Instance.get(
-        `${PRODUCT_QUERY_FILTER}?category=${searchCategory}&search=${searchProduct}&sort=${sort}&price=${priceRange}`,
-        {
-          withCredentials: true,
-        }
+  // ****************************************  filter functionality ****************************************//
+
+  const textSearch = searchParams.get("search");
+  const priceSearch = searchParams.get("price");
+  const handleFilter = () => {
+    let filteredValues = [...products];
+
+    if (textSearch) {
+      filteredValues = filteredValues.filter((product) =>
+        product.name.toLowerCase().includes(textSearch.toLowerCase())
       );
-      const response = await request.data;
-      console.log(response);
-    } catch (error) {
-      console.log(error);
     }
+
+    if (sort) {
+      filteredValues = filteredValues.sort((a, b) => {
+        if (sort === "asc") {
+          return a.price - b.price;
+        } else if (sort === "desc") {
+          return b.price - a.price;
+        }
+        return;
+      });
+    }
+    if (priceSearch) {
+      filteredValues = filteredValues.filter(
+        (product) => product.price <= priceSearch
+      );
+    }
+
+    setFilteredProducts(filteredValues);
+  };
+
+  const resetQueryFilter = () => {
+    setSearchParams((prevParams) => {
+      const newParams = new URLSearchParams(prevParams);
+      newParams.delete("search");
+      newParams.delete("price");
+      newParams.delete("sort");
+    });
+    location.reload();
   };
 
   useEffect(() => {
-    if (searchParams.size > 0) {
-      fetchProductsQueryWise();
+    if (products.length > 0) {
+      handleFilter();
     }
-  }, [searchParams]);
+  }, [searchParams, textSearch, sort, products]);
 
   return (
     <div className="bg-white">
@@ -229,7 +267,7 @@ const CategoryProduct = () => {
             </h1>
 
             <div className="flex items-center ">
-              <Menu as="div" className="relative inline-block text-left ">
+              <Menu as="div" className="relative inline-block text-left z-20 ">
                 <div>
                   <MenuButton className="group inline-flex justify-center text-sm font-medium text-gray-700 hover:text-gray-900">
                     Sort
@@ -287,10 +325,11 @@ const CategoryProduct = () => {
                   <input
                     class="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
                     placeholder="Search anything here..."
-                    onChange={debounceProductText}
+                    onChange={handleInputChange}
+                    value={debouncedPrductName}
                   />
                 </div>
-
+                {/* 
                 {Array.from({ length: 1 }).map((section, idx) => (
                   <Disclosure
                     key={idx}
@@ -323,7 +362,7 @@ const CategoryProduct = () => {
                                 <div className="group grid size-4 grid-cols-1">
                                   <input
                                     checked={searchCategory.includes(option)}
-                                    name={`category`}
+                                    name="category"
                                     value={option}
                                     onChange={handleChange}
                                     type="checkbox"
@@ -360,7 +399,7 @@ const CategoryProduct = () => {
                       </div>
                     </DisclosurePanel>
                   </Disclosure>
-                ))}
+                ))} */}
                 <div className="py-6">
                   <div className="flex justify-between items-center">
                     <label
@@ -370,7 +409,7 @@ const CategoryProduct = () => {
                       Price Range (in rupees)
                     </label>
                     <span className="text-xs font-semibold m-0">
-                      ₹{priceRange}
+                      {localCurrency(+debouncedPriceRange)}
                     </span>
                   </div>
 
@@ -379,28 +418,41 @@ const CategoryProduct = () => {
                     min={0}
                     max={10000}
                     step={100}
+                    defaultValue={0}
                     name="price"
-                    value={priceRange}
+                    value={debouncedPriceRange}
                     onChange={handlePrice}
                     type="range"
-                    class="w-full h-[4px]  bg-gray-200 mb-6 rounded-lg appearance-none  "
+                    class="w-full h-[4px]  bg-gray-200 mb-2 rounded-lg appearance-none  "
                   />
                 </div>
+                <button
+                  onClick={() => resetQueryFilter()}
+                  type="button"
+                  class="text-white bg-gray-800 w-full hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-md text-sm px-5 py-2.5 me-2 mb-2"
+                >
+                  Reset Filter
+                </button>
               </form>
 
               {/* Product grid */}
               <div className="lg:col-span-4 flex flex-wrap  h-full overflow-y-auto pb-20">
-                {products.length > 0 ? (
-                  products.map((product) => (
+                {products.length == 0 && (
+                  <div className="lg:col-span-4 flex flex-wrap  h-full overflow-y-auto pb-20">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <CardSkeleton key={i} />
+                    ))}
+                  </div>
+                )}
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
                     <div className="mb-5">
                       <ProductCard data={product} />
                     </div>
                   ))
                 ) : (
-                  <div className="lg:col-span-4 flex flex-wrap  h-full overflow-y-auto pb-20">
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <CardSkeleton key={i} />
-                    ))}
+                  <div className="flex justify-center items-center h-full w-full">
+                    <p className=" text-4xl font-semibold ">No item found</p>
                   </div>
                 )}
               </div>

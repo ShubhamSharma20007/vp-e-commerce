@@ -51,18 +51,14 @@ const Navbar = () => {
       }
     } catch (error) {
       const err = error.response?.data;
-      if (err) {
-        customToast(err.message, "error");
-      }
+      console.log(err);
     }
   };
 
-  useEffect(() => {
-    cartLength();
-  });
+  cartLength();
 
   return (
-    <nav className=" sticky bg-white  w-full z-20 top-0 start-0 border-b shadow-md">
+    <nav className=" sticky bg-white  w-full z-10 top-0 start-0 border-b shadow-md">
       <div className="max-w-screen-lg  flex flex-wrap items-center justify-between mx-auto p-4">
         <div className="flex gap-5 items-center">
           <Link
@@ -89,7 +85,7 @@ const Navbar = () => {
               {toggle && (
                 <div
                   id="dropdown"
-                  class="z-10 absolute top-[40px] -left-[100px]  bg-white divide-y divide-gray-100 rounded-lg shadow w-44 overflow-hidden "
+                  class="z-20 absolute top-[40px] -left-[100px]  bg-white divide-y divide-gray-100 rounded-lg shadow w-44 overflow-hidden "
                 >
                   <ul
                     class=" text-sm text-gray-700 "
@@ -102,6 +98,14 @@ const Navbar = () => {
                           {currentUser.fullName.firstName} 👋
                         </span>
                       </p>
+                    </li>
+                    <li className="relative cursor-default ">
+                      <Link
+                        to={"/order"}
+                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                      >
+                        My Order
+                      </Link>
                     </li>
                     {currentUser.role === "admin" && (
                       <>

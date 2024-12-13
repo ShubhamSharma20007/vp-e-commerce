@@ -13,7 +13,7 @@ const ProductTable = ({ rowData, colDefs, pageSize, onPaginationChanged }) => {
 
   //   pagination
   const pagination = true;
-  const paginationPageSizeSelector = [1, 2, 3];
+  const paginationPageSizeSelector = [10, 20, 50];
 
   return (
     <>

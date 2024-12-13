@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import Stripe from 'stripe';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -9,9 +10,13 @@ import productRouter from './routes/product.route.js';
 import cartRouter from './routes/cart.route.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import auth from './middlewares/auth.middleware.js';
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 const app = express();
 const dirname = fileURLToPath(
     import.meta.url)
+
 
 
 connectDB()
@@ -28,6 +33,83 @@ app.use(cors({ credentials: true, origin: process.env.CLIENT_ORIGIN }));
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/product', productRouter)
 app.use('/api/v1/cart', cartRouter)
+
+//  payment intrigration 
+
+app.post('/api/v1/payment', auth, async (req, res) => {
+    const { products } = req.body;
+    const user = req.user;
+
+    if (!products || products.length === 0) {
+        return res.status(400).json({ success: false, message: "No products provided." });
+    }
+
+    try {
+        // Create a customer in Stripe
+        const customer = await stripe.customers.create({
+            name: `${user.fullName.firstName} ${user.fullName.lastName}`,
+            email: user.email,
+            address: {
+                line1: 'alwar',
+                postal_code: '301001',
+                city: 'alwar',
+                state: 'rajasthan',
+                country: 'IN',
+            },
+        });
+
+        if (!customer) {
+            throw new Error("Failed to create customer.");
+        }
+
+
+        const stripeProducts = await Promise.all(
+            products.map(async (p) => {
+                const stripeProduct = await stripe.products.create({
+                    name: p.productId.name,
+                });
+
+                const stripePrice = await stripe.prices.create({
+                    product: stripeProduct.id,
+                    unit_amount: p.productId.price * p.quantity,
+                    currency: 'INR',
+                });
+
+
+                return {
+                    price: stripePrice.id,
+                    quantity: p.quantity,
+                };
+            })
+        );
+        console.log(stripeProducts)
+
+
+        const session = await stripe.checkout.sessions.create({
+            line_items: stripeProducts.map((item) => ({
+                price: item.price,
+                quantity: item.quantity,
+            })),
+            mode: 'payment',
+            success_url: `${process.env.CLIENT_ORIGIN}/success`,
+            cancel_url: `${process.env.CLIENT_ORIGIN}/cart`,
+            customer_email: user.email,
+
+        });
+
+        if (!session || !session.url) {
+            throw new Error("Failed to create checkout session.");
+        }
+
+
+        return res.status(200).json({ url: session.url, success: true });
+
+    } catch (error) {
+        console.error("Payment error:", error.message);
+        return res.status(500).json({ url: null, success: false, error: error.message });
+    }
+});
+
 
 
 //  Server listen

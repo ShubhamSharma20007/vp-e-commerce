@@ -11,6 +11,8 @@ import ProductOverView from "./pages/product-overview";
 import NewProduct from "./pages/admin/new-product";
 import CategoryProduct from "./pages/category-product";
 import Cart from "./pages/cart";
+import Order from "./pages/order";
+import SuccessPayment from "./pages/success-payment";
 const App = () => {
   const { currentUser } = useContext(UserContext);
   const PrivetRoute = ({ children }) => {
@@ -36,6 +38,8 @@ const App = () => {
       <Route path="/add-product" element={<NewProduct />} />
       <Route path="/cart" element={<Cart />} />
       <Route path="/category/:category" element={<CategoryProduct />} />
+      <Route path="/success" element={<SuccessPayment />} />
+      <Route path="/order" element={<Order />} />
     </Routes>
   );
 };

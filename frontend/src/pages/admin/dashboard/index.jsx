@@ -1,47 +1,34 @@
 import React, { useEffect } from "react";
 import Navbar from "../../../components/Navbar";
-import InventoryCard from "../components/ItemCard";
-import { AiOutlineProduct } from "react-icons/ai";
-import { GrGroup } from "react-icons/gr";
-import { TbCoinRupee } from "react-icons/tb";
-import { BsGraphUpArrow } from "react-icons/bs";
+
 import { useState } from "react";
 import ProductTable from "../components/ProductTable";
 import { RiEdit2Line } from "react-icons/ri";
-import { IoClose } from "react-icons/io5";
-import { PRODUCT_GET, PRODUCT_LIST } from "../../../utils/constant";
+import {
+  PRODUCT_COUNT,
+  PRODUCT_GET,
+  PRODUCT_LIST,
+} from "../../../utils/constant";
 import { Instance } from "../../../lib/instance";
 import { useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import ProductUpdateForm from "../../../components/ProductUpdateForm";
 import { IMAGE_PATH } from "../../../utils/constant";
+import ConfirmationPopup from "../components/ConfirmationPopup";
+import { PRODUCT_DELETE } from "../../../utils/constant";
+import { MdOutlineDeleteForever } from "react-icons/md";
+import { selectDeleteItem } from "../../../redux/productSlice";
+import toast from "react-hot-toast";
+import { useDispatch, useSelector } from "react-redux";
+import { customToast } from "../../../lib/customToast";
 const AdminDashboard = () => {
+  const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
+  const dispatch = useDispatch();
+  const deletemItem = useSelector((val) => val.product.deleteProduct);
   const updateFormRef = useRef(null);
   const handleOpenCloseForm = () => {
     updateFormRef.current.classList.toggle("translate-x-full");
   };
-  const productDets = [
-    {
-      title: "total product",
-      value: 1000,
-      icon: <AiOutlineProduct />,
-    },
-    {
-      title: "users",
-      value: 100,
-      icon: <GrGroup />,
-    },
-    {
-      title: "sales",
-      value: 1000,
-      icon: <TbCoinRupee />,
-    },
-    {
-      title: "revenue",
-      value: 100,
-      icon: <BsGraphUpArrow />,
-    },
-  ];
 
   const [currentProductData, setCurrentProductData] = useState(null);
 
@@ -55,7 +42,13 @@ const AdminDashboard = () => {
           }}
           className="text-xl cursor-pointer transition-all duration-300  rounded-md  hover:bg-green-200 p-1 box-content "
         />
-        <IoClose className="text-xl cursor-pointer transition-all duration-300  rounded-md  hover:bg-red-200 p-1 box-content " />
+        <MdOutlineDeleteForever
+          onClick={() => {
+            dispatch(selectDeleteItem(data));
+            setIsDeletePopupOpen(true);
+          }}
+          className="text-xl cursor-pointer transition-all duration-300  rounded-md  hover:bg-red-200 p-1 box-content "
+        />
       </div>
     );
   };
@@ -93,80 +86,110 @@ const AdminDashboard = () => {
   // *******************************************  product table data append   ************************************//
   //  fetch the data from the backend
   const [searchParams, setSearchParams] = useSearchParams();
-  const gridRef = useRef(null);
 
-  // get the url values
-  const [currentPage, setCurrentPage] = useState(
-    parseInt(searchParams.get("page")) || 1
-  );
-  const [pageSize, setPageSize] = useState(
-    parseInt(searchParams.get("limit")) || 50
-  );
+  const pageSize = parseInt(searchParams.get("limit")) || 10;
+  const currentPage = parseInt(searchParams.get("page")) || 1;
 
   const [totalProduct, setTotalProduct] = useState(0);
   const [isupdate, setIsUpdate] = useState(false);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductCount = async () => {
       try {
-        const request = await Instance.get(
-          `${PRODUCT_LIST}?page=${currentPage}&limit=${pageSize}`,
-          {
-            withCredentials: true,
-          }
-        );
-        const response = await request.data;
-        if (response.success) {
-          const { products, productCount } = response;
-          setTotalProduct(productCount);
-          setRowData(products);
+        const request = await Instance.get(PRODUCT_COUNT, {
+          withCredentials: true,
+        });
+        if (request.data.success) {
+          setTotalProduct(request.productCount);
         }
       } catch (error) {
-        const err = error.response?.data;
-        if (err) {
-          console.log(err);
-        }
+        console.log(error);
       }
     };
+    fetchProductCount();
+  }, [isupdate]);
+
+  const fetchProduct = async () => {
+    try {
+      const request = await Instance.get(
+        `${PRODUCT_LIST}?page=${currentPage}&limit=${""}`,
+        {
+          withCredentials: true,
+        }
+      );
+      const response = await request.data;
+      if (response.success) {
+        const { products } = response;
+        console.log(products);
+
+        setRowData(products);
+      }
+    } catch (error) {
+      const err = error.response?.data;
+      if (err) {
+        console.log(err);
+      }
+    }
+  };
+  useEffect(() => {
     fetchProduct();
-  }, [currentPage, pageSize, isupdate]);
+  }, [pageSize]);
 
   const onPaginationChanged = (event) => {
     const newPage = event.api.paginationGetCurrentPage() + 1;
     const newLimit = event.api.paginationGetPageSize();
-    setCurrentPage(newPage);
-    setPageSize(newLimit);
-    setSearchParams({
-      page: newPage,
-      limit: newLimit,
-    });
+
+    const tabsNum = Math.ceil(totalProduct / pageSize);
+    console.log(newPage, newLimit);
+
+    setSearchParams({ page: newPage, limit: newLimit });
+  };
+
+  //  handle delete product
+  const handleDeleteProduct = async () => {
+    const id = deletemItem?._id;
+    try {
+      const request = await Instance.delete(`${PRODUCT_DELETE}/${id}`, {
+        withCredentials: true,
+      });
+      if (request.data.success) {
+        setIsDeletePopupOpen(false);
+        customToast(request.data.message, "success");
+        fetchProduct();
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
-    <div className="relative">
-      <Navbar />
-      <ProductUpdateForm
-        currentProductData={currentProductData}
-        updateFormRef={updateFormRef}
-        setIsUpdate={setIsUpdate}
-        isupdate={isupdate}
-        handleOpenCloseForm={handleOpenCloseForm}
+    <>
+      <ConfirmationPopup
+        handleDeleteProduct={handleDeleteProduct}
+        isDeletePopupOpen={isDeletePopupOpen}
+        setIsDeletePopupOpen={setIsDeletePopupOpen}
       />
-      {/* <div className="flex justify-around flex-wrap ">
-        {productDets.map((item, idx) => (
-          <InventoryCard item={item} key={idx} />
-        ))}
-      </div> */}
-      <div className="m-5 ">
-        <ProductTable
-          colDefs={colDefs}
-          rowData={rowData}
-          onPaginationChanged={onPaginationChanged}
-          totalProduct={totalProduct}
-          pageSize={pageSize}
+      <div className="relative">
+        <Navbar />
+        <ProductUpdateForm
+          currentProductData={currentProductData}
+          updateFormRef={updateFormRef}
+          setIsUpdate={setIsUpdate}
+          isupdate={isupdate}
+          handleOpenCloseForm={handleOpenCloseForm}
         />
+
+        <div className="m-5 ">
+          <ProductTable
+            colDefs={colDefs}
+            rowData={rowData}
+            onPaginationChanged={onPaginationChanged}
+            totalProduct={totalProduct}
+            pageSize={pageSize}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

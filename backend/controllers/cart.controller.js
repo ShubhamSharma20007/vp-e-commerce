@@ -102,18 +102,13 @@ const getProductCart = async (req, res) => {
 
     try {
         const userCartExisting = await CartModel.findOne({ userId: userId }).populate("products.productId");
-        if (!userCartExisting) {
-            return res.status(404).json({
-                success: false,
-                message: "Cart not found"
-            })
-        } else {
-            return res.status(200).json({
-                success: true,
-                message: "Cart found",
-                cart: userCartExisting
-            })
-        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Cart found",
+            cart: userCartExisting
+        })
+
 
     } catch (err) {
         console.log(err)

@@ -8,8 +8,9 @@ import {
     allProductsGroupWise,
     getProductById,
     getProductCategoryWise,
+    totalProductCount,
     fetchCategories,
-    filterProducts
+    // filterProducts
 } from "../controllers/product.controller.js";
 import { body } from "express-validator";
 import auth from "../middlewares/auth.middleware.js";
@@ -25,7 +26,8 @@ productRouter.get('/get-product/:id', auth, getProductById)
 productRouter.delete('/delete-product/:id', auth, deleteProduct)
 productRouter.get('/get-category-product/:category', auth, getProductCategoryWise)
 productRouter.get('/categories', auth, fetchCategories)
-productRouter.get('/filter-product', auth, filterProducts) //  values should be comes into query
+productRouter.get('/total-product-count', auth, totalProductCount)
+// productRouter.get('/filter-product', auth, filterProducts) //  values should be comes into query
 
 
 
