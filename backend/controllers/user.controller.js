@@ -87,10 +87,33 @@ const getUserProfile = async (req, res) => {
     }
 }
 
+const userRequiredAddress = async (req, res) => {
+    const { area, city, state, pincode } = req.body;
+
+    try {
+        const user = req.user;
+        if (!user) {
+            return res.status(400).json({ message: "User not found", success: false })
+        }
+        // find the user
+        const updateUser = await UserModel.findById(user._id);
+        updateUser.address = { area, city, state, pincode };
+        await updateUser.save();
+        return res.status(200).json({ message: "User address updated", updateUser, success: true });
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "Internal server error", error, success: false });
+
+    }
+
+}
 
 export {
     regiserUser,
     loginUser,
+    userRequiredAddress,
     logout,
-    getUserProfile
+    getUserProfile,
+
 }

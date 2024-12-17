@@ -19,7 +19,7 @@ const ProductTable = ({ rowData, colDefs, pageSize, onPaginationChanged }) => {
     <>
       <div className="ag-theme-quartz" style={{ height: 500 }}>
         <AgGridReact
-          rowSelection={rowSelection}
+          // rowSelection={rowSelection}
           rowData={rowData}
           onPaginationChanged={onPaginationChanged}
           columnDefs={colDefs}

@@ -7,10 +7,13 @@ import cookieParser from 'cookie-parser';
 import connectDB from './db/connection.js';
 import userRouter from './routes/user.route.js';
 import productRouter from './routes/product.route.js';
+import paymentRouter from './routes/payment.route.js';
 import cartRouter from './routes/cart.route.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import auth from './middlewares/auth.middleware.js';
+import orderRoute from './routes/order.route.js';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
@@ -29,15 +32,18 @@ app.use(express.static(path.join(dirname, "../public")))
 app.use(cors({ credentials: true, origin: process.env.CLIENT_ORIGIN }));
 
 
+
 //  routes
 app.use('/api/v1/user', userRouter)
 app.use('/api/v1/product', productRouter)
 app.use('/api/v1/cart', cartRouter)
+app.use('/api/v1/payment', paymentRouter)
+app.use('/api/v1/order', orderRoute)
 
-//  payment intrigration 
+//  payment intrigration  and gateway
 
-app.post('/api/v1/payment', auth, async (req, res) => {
-    const { products } = req.body;
+app.post('/api/v1/payment-gateway', auth, async (req, res) => {
+    const { products, area, city, pincode, state } = req.body;
     const user = req.user;
 
     if (!products || products.length === 0) {
@@ -50,10 +56,10 @@ app.post('/api/v1/payment', auth, async (req, res) => {
             name: `${user.fullName.firstName} ${user.fullName.lastName}`,
             email: user.email,
             address: {
-                line1: 'alwar',
-                postal_code: '301001',
-                city: 'alwar',
-                state: 'rajasthan',
+                line1: area,
+                postal_code: pincode,
+                city: city,
+                state: state,
                 country: 'IN',
             },
         });
@@ -67,6 +73,7 @@ app.post('/api/v1/payment', auth, async (req, res) => {
             products.map(async (p) => {
                 const stripeProduct = await stripe.products.create({
                     name: p.productId.name,
+
                 });
 
                 const stripePrice = await stripe.prices.create({
@@ -75,14 +82,13 @@ app.post('/api/v1/payment', auth, async (req, res) => {
                     currency: 'INR',
                 });
 
-
                 return {
                     price: stripePrice.id,
                     quantity: p.quantity,
                 };
             })
         );
-        console.log(stripeProducts)
+
 
 
         const session = await stripe.checkout.sessions.create({
@@ -91,15 +97,18 @@ app.post('/api/v1/payment', auth, async (req, res) => {
                 quantity: item.quantity,
             })),
             mode: 'payment',
-            success_url: `${process.env.CLIENT_ORIGIN}/success`,
+            success_url: `${process.env.CLIENT_ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.CLIENT_ORIGIN}/cart`,
             customer_email: user.email,
 
         });
 
+
+
         if (!session || !session.url) {
             throw new Error("Failed to create checkout session.");
         }
+
 
 
         return res.status(200).json({ url: session.url, success: true });

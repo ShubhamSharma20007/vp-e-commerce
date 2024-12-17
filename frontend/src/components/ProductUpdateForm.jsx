@@ -10,6 +10,7 @@ import Loading from "./Loading";
 const ProductUpdateForm = ({
   currentProductData,
   updateFormRef,
+  fetchProduct,
   setIsUpdate,
   isupdate,
   handleOpenCloseForm,
@@ -105,7 +106,7 @@ const ProductUpdateForm = ({
           setLoading(false);
           setIsUpdate(!isupdate);
           customToast(response.message, "success");
-
+          fetchProduct();
           //reset the inputs
           setInputs({
             name: "",

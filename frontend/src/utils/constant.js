@@ -11,6 +11,7 @@ export const IMAGE_PATH = `${HOST}/uploads` //  endpoint should be imagePath
 export const USER_LOGIN = `${VERSION_ROUTE}/user/login`;
 export const USER_REGISTER = `${VERSION_ROUTE}/user/register`;
 export const USER_PROFILE = `${VERSION_ROUTE}/user/profile`;
+export const USER_ADDRESS = `${VERSION_ROUTE}/user/user-address`;
 export const USER_LOGOUT = `${VERSION_ROUTE}/user/logout`;
 
 
@@ -39,4 +40,9 @@ export const CART_DELETE = `${VERSION_ROUTE}/cart/delete-cart-item` // :id or :q
 
 
 // payments
-export const PAYMENT_ADD = `${VERSION_ROUTE}/payment`;
+export const PAYMENT_ADD = `${VERSION_ROUTE}/payment-gateway`;
+export const PAYMENT_INTENT = `${VERSION_ROUTE}/payment/create-payment-intent`;
+
+
+// orders
+export const ORDER_GET = `${VERSION_ROUTE}/order/get-orders`;

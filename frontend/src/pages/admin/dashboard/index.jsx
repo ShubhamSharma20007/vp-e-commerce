@@ -172,6 +172,7 @@ const AdminDashboard = () => {
       <div className="relative">
         <Navbar />
         <ProductUpdateForm
+          fetchProduct={fetchProduct}
           currentProductData={currentProductData}
           updateFormRef={updateFormRef}
           setIsUpdate={setIsUpdate}

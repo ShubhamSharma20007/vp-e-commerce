@@ -97,12 +97,7 @@ const Register = () => {
   };
   return (
     <>
-      <div
-        className="flex h-screen w-screen   flex-col items-center justify-center px-6 py-8 mx-auto lg:py-0"
-        style={{
-          backgroundColor: colors.bgSecondaryColor,
-        }}
-      >
+      <div className="flex bg-no-repeat bg-cover  bg-[url('https://plus.unsplash.com/premium_photo-1674729243673-0b5e871a8a24?q=80&w=1535&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')]  h-screen w-screen   flex-col items-center justify-center px-6 py-8 mx-auto lg:py-0">
         <div className="w-full bg-white/70 rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0">
           <form
             className="p-6 space-y-4 md:space-y-6 sm:py-4"
