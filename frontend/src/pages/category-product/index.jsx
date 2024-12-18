@@ -46,7 +46,7 @@ const CategoryProduct = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-
+  const [loading, setLoading] = useState(false);
   const searchParamsPrice = searchParams.get("price");
   const searchCategory = searchParams.getAll("category");
   const searchProductName = searchParams.get("search");
@@ -56,6 +56,7 @@ const CategoryProduct = () => {
   //    product data
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
         const request = await Instance.get(
           `${PRODUCT_CATEGORY_WISE}/${category}`,
@@ -68,12 +69,15 @@ const CategoryProduct = () => {
         if (response.success) {
           const { products } = response;
           setProducts(products);
+          setLoading(false);
         }
       } catch (error) {
         const err = error.response?.data;
         if (err) {
           console.log(err);
         }
+      } finally {
+        setLoading(false);
       }
     })();
   }, [productReducer]);
@@ -437,23 +441,22 @@ const CategoryProduct = () => {
 
               {/* Product grid */}
               <div className="lg:col-span-4 flex flex-wrap  h-full overflow-y-auto pb-20">
-                {products.length == 0 && (
+                {loading ? (
                   <div className="lg:col-span-4 flex flex-wrap  h-full overflow-y-auto pb-20">
                     {Array.from({ length: 10 }).map((_, i) => (
                       <CardSkeleton key={i} />
                     ))}
                   </div>
-                )}
-                {filteredProducts.length > 0 ? (
+                ) : products.length === 0 ? (
+                  <div className="flex justify-center items-center h-full w-full">
+                    <p className=" text-4xl font-semibold ">No item found</p>
+                  </div>
+                ) : (
                   filteredProducts.map((product) => (
                     <div className="mb-5">
                       <ProductCard data={product} />
                     </div>
                   ))
-                ) : (
-                  <div className="flex justify-center items-center h-full w-full">
-                    <p className=" text-4xl font-semibold ">No item found</p>
-                  </div>
                 )}
               </div>
             </div>

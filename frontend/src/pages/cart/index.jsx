@@ -556,7 +556,8 @@ const Cart = () => {
                           Discount
                         </dt>
                         <dd className="text-base font-medium text-green-800">
-                          -{localCurrency(discountPriceFun()) || 0}
+                          {discountPriceFun() > 0 ? "-" : null}
+                          {localCurrency(discountPriceFun()) || 0}
                         </dd>
                       </dl>
 
