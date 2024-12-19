@@ -1,6 +1,8 @@
 //  const
 export const HOST =
-    import.meta.env.VITE_BACKEND_URL;
+    process.env.NODE_ENV === 'development' ?
+        import.meta.env.VITE_BACKEND_URL : import.meta.env.VITE_BACKEND_LIVE;
+
 export const VERSION_ROUTE =
     import.meta.env.VITE_VERSION_URL;
 

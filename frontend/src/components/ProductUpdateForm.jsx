@@ -227,7 +227,7 @@ const ProductUpdateForm = ({
                   </option>
                   <option value="men">Men</option>
                   <option value="women">Women</option>
-                  <option value="babies">Babies</option>
+                  <option value="kids">Kids</option>
                 </select>
                 <input
                   placeholder="Stocks"
